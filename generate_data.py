@@ -11,7 +11,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Synthetic data generation')
     parser.add_argument('--seed', type=int, default=0, help='seed for data generation')
     parser.add_argument('--n_data', type=int, default=2000, help='number of data points')
-    parser.add_argument('--weight', type=float, default=0.2, help='initial weight for neural network')
+    parser.add_argument('--weight', type=float, default=0.2, help='initialization weight for neural network')
     parser.add_argument('--layers', type=int, default=2, help='number of layers for neural network')
     parser.add_argument('--hidden_size', type=int, default=64, help='hidden size for neural network')
     parser.add_argument('--noise', type=str, default="normal", help='noise distribution')

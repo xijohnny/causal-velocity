@@ -7,37 +7,31 @@ from training import fit_sm_bd
 from utils import standardize_data, nullable_float, count_nparams
 from models import parametric_model, nn_model, anm_model, lsnm_model, additive_model
 
-# import sys
-# sys.path.insert(0,'/Users/johnnyxi/Documents/phd/CausalDiscover/cd-cocycle-jax/loci')
-
-# from loci.causa.loci import loci
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description = "")
-    parser.add_argument("--dataset", metavar = "DATASET", type = str, default = "tuebingen", help = "Dataset to use for benchmarking, pick from ['tuebingen', 'sim', 'simc', 'simg', 'simln'].")
-    parser.add_argument("--seed", metavar = "SEED", type = int, default = 0, help = "Seed for random number generator.")
-    parser.add_argument("--layers", metavar = "LAYERS", type = int, default = 2, help = "Number of layers for velocity neural network.")
-    parser.add_argument("--hidden_size", metavar = "HIDDEN_SIZE", type = int, default = 16, help = "Hidden size for velocity neural network.")
-    parser.add_argument("--init_weight", metavar = "INIT_WEIGHT", type = float, default = 0.2, help = "Initialization variance for neural network.")
-    parser.add_argument("--reg", metavar = "REG", type = float, default = 0.1, help = "Regularization term for score estimator.")
-    parser.add_argument("--lr", metavar = "LR", type = float, default = 0.1, help = "Learning rate for optimizer.")
-    parser.add_argument("--val_split", metavar = "VAL_SPLIT", type = nullable_float, help = "Validation split to determine direction.")
-    parser.add_argument("--test_split", metavar = "TEST_SPLIT", type = nullable_float, help = "Test split to determine direction.")
-    parser.add_argument("--outlier_trim", metavar = "OUTLIER_TRIM", type = float, default = 0, help = "What percent of outliers to remove from data.")
-    parser.add_argument("--loss_l2", metavar = "LOSS_L2", type = float, default = 0.00001, help = "L2 regularization term for loss function.")
-    parser.add_argument("--n_steps", metavar = "N_STEPS", type = int, default = 1000, help = "Number of steps for optimization.")
+    parser.add_argument("--dataset", metavar = "DATASET", type = str, default = "velocity", help = "Dataset to use for benchmarking. See data/ for options.")
+    parser.add_argument("--seed", metavar = "SEED", type = int, default = 0, help = "Seed for parameter initialization.")
     parser.add_argument("--score", metavar = "SCORE", type = str, default = "stein", help = "Score estimation method (['stein', 'kde', 'hybrid]).")
-    parser.add_argument("--loss_pos", metavar = "LOSS_POS", type = str, default = "squared", help = "Positive transformation for loss function (['abs', 'squared']).")
     parser.add_argument("--kernel", metavar = "KERNEL", type = str, default = "gauss", help = "Kernel for score estimation (['gauss', 'exp']).")
-    parser.add_argument("--gof_eval", metavar = "GOF_EVAL", type = str, default = "sq", help = "GoF evaluation metric, either use raw or sq GoF (['raw', 'sq']).")
+    parser.add_argument("--model", metavar = "MODEL", type = str, default = "parametric-quad", help = "Model to use for training (['nn', 'anm', lsnm', 'additive', 'parametric-lin', 'parametric-quad', 'parametric-cubic', 'parametric-quartic']).")
+    parser.add_argument("--add_fourier", action='store_true', default = False, help = "Add Fourier terms (only parametric models).")
+    parser.add_argument("--add_exponential", action='store_true', default = False, help = "Add exponential terms (only parametric models).")
+    parser.add_argument("--layers", metavar = "LAYERS", type = int, default = 2, help = "Number of layers for neural network models.")
+    parser.add_argument("--hidden_size", metavar = "HIDDEN_SIZE", type = int, default = 32, help = "Hidden size for neural network models.")
+    parser.add_argument("--init_weight", metavar = "INIT_WEIGHT", type = float, default = 0.2, help = "Initialization variance.")
+    parser.add_argument("--reg", metavar = "REG", type = float, default = 0.1, help = "Regularization term for score estimator. Suggest 0.1 for stein and 0.01 for kde.")
     parser.add_argument("--optimizer", metavar = "OPTIMIZER", type = str, default = "adam", help = "Optimizer to use for training (['sgd', 'adam']).")
-    parser.add_argument("--model", metavar = "MODEL", type = str, default = "nn", help = "Model to use for training (['nn', 'anm', lsnm', 'additive', 'parametric-lin', 'parametric-quad', 'parametric-cubic', 'parametric-quartic']).")
-    parser.add_argument("--add_fourier", action='store_true', default = False, help = "Add Fourier terms to parametric model.")
-    parser.add_argument("--add_exponential", action='store_true', default = False, help = "Add exponential terms to parametric model.")
+    parser.add_argument("--lr", metavar = "LR", type = float, default = 0.1, help = "Learning rate for optimizer.")
+    parser.add_argument("--n_steps", metavar = "N_STEPS", type = int, default = 100, help = "Number of steps for optimization.")
+    parser.add_argument("--loss_l2", metavar = "LOSS_L2", type = float, default = 0.00001, help = "L2 regularization term for loss function.")
+    parser.add_argument("--lam_complexity", metavar = "LAM_COMPLEXITY", type = float, default = 0.01, help = "Complexity penalty derivative.")
+    parser.add_argument("--complexity_order", metavar = "COMPLEXITY_ORDER", type = int, default = 1, help = "Order of complexity penalty. Only order 1 is currently implemented.")
+    parser.add_argument("--loss_pos", metavar = "LOSS_POS", type = str, default = "squared", help = "Positivity transformation for loss function (['abs', 'squared']).")
+    parser.add_argument("--val_split", metavar = "VAL_SPLIT", type = nullable_float, help = "Validation split (for model selection).")
+    parser.add_argument("--test_split", metavar = "TEST_SPLIT", type = nullable_float, help = "Test split (to determine direction).")
+    parser.add_argument("--gof_eval", metavar = "GOF_EVAL", type = str, default = "raw", help = "GoF evaluation metric, either use raw or sq GoF (['raw', 'sq']).")
+    parser.add_argument("--outlier_trim", metavar = "OUTLIER_TRIM", type = float, default = 0, help = "What percent of outliers to remove from data.")
     parser.add_argument("--n_reinit", metavar = "N_REINIT", type = int, default = 1, help = "Number of reinitializations for optimization.")
-    parser.add_argument("--lam_complexity", metavar = "LAM_COMPLEXITY", type = float, default = 0.1, help = "Complexity penalty for model selection.")
-    parser.add_argument("--complexity_order", metavar = "COMPLEXITY_ORDER", type = int, default = 2, help = "Order of complexity penalty.")
-    parser.add_argument("--remote", action='store_true', default = False, help = "Running on remote server.")
     return parser.parse_args()
 
 args = parse_arguments()
@@ -62,11 +56,7 @@ N_REINIT = args.n_reinit
 LAM_COMPLEXITY = args.lam_complexity
 COMPLEXITY_ORDER = args.complexity_order
 
-
-if args.remote:
-    BASE_PATH = "/scratch/st-benbr-1/xijohnny/cd-ode-cocycle/data/"
-else:
-    BASE_PATH = "/Users/johnnyxi/Documents/phd/CausalDiscover/cd-cocycle-jax/data/"
+BASE_PATH = "data/"
 
 if args.dataset == "tuebingen":
     DATA_PATH = BASE_PATH + "Tuebingen"
@@ -181,6 +171,7 @@ if __name__ == "__main__":
 
             gof_fwd, gof_bwd, complexity_fwd, complexity_bwd, params_fwd, params_bwd = fit_sm_bd(PARAMS_INIT, V_MODEL, x_data, y_data, 
                                             lr = LR / jnp.log(count_nparams(PARAMS_INIT)), 
+                                            n_steps = N_STEPS,
                                             reg = REG, 
                                             score = SCORE,
                                             gof = GOF_EVAL, 

@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 
 import sys
-sys.path.insert(0,'/scratch/st-benbr-1/xijohnny/cd-ode-cocycle/loci')
+sys.path.insert(0,'loci')
 
 from loci.causa.loci import loci
 
@@ -30,20 +30,15 @@ def standardize_data(x, return_statistics = False, trim_outliers = 0):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description = "")
-    parser.add_argument("--dataset", metavar = "DATASET", type = str, default = "velocity", help = "Dataset to use for benchmarking, pick from ['tuebingen', 'sim', 'simc', 'simg', 'simln'].")
+    parser.add_argument("--dataset", metavar = "DATASET", type = str, default = "velocity", help = "Dataset to use for benchmarking. See data/ for options.")
     parser.add_argument("--outlier_trim", metavar = "OUTLIER_TRIM", type = float, default = 0, help = "What percent of outliers to remove from data.")
     parser.add_argument("--n_steps", metavar = "N_STEPS", type = int, default = 1000, help = "Number of steps for optimization.")
-    parser.add_argument("--model", metavar = "MODEL", type = str, default = "hsic", help = "Model to use for training (['nn', 'anm', lsnm', 'additive', 'parametric-lin', 'parametric-quad', 'parametric-cubic', 'parametric-quartic']).")
-    parser.add_argument("--remote", action='store_true', default = False, help = "Running on remote server.")
+    parser.add_argument("--model", metavar = "MODEL", type = str, default = "hsic", help = "LOCI variant (['hsic', 'hsic_spline', 'lik', 'lik_spline']).")
     return parser.parse_args()
 
 args = parse_arguments()
 
-
-if args.remote:
-    BASE_PATH = "/scratch/st-benbr-1/xijohnny/cd-ode-cocycle/data/"
-else:
-    BASE_PATH = "/Users/johnnyxi/Documents/phd/CausalDiscover/cd-cocycle-jax/data/"
+BASE_PATH = "data/"
 
 if args.dataset == "tuebingen":
     DATA_PATH = BASE_PATH + "Tuebingen"
