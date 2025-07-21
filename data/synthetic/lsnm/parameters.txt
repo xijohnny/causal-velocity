@@ -1,0 +1,5 @@
+mechanism=lsnm
+noise scale=0.2
+initialization weight=0.2
+layers=2
+hidden_size=64
